@@ -1,0 +1,5 @@
+*.exe
+testing.cpp
+.vscode
+main.cpp.*
+catatan.txt

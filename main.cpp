@@ -1,5 +1,6 @@
 #include <iostream>
 #include <windows.h>
+#include <conio.h>
 
 using namespace std;
 /* Struct untuk user dengan single linked list */
@@ -23,6 +24,8 @@ User *userHeadInData = NULL;
 Barang *head = NULL,
        *tail = NULL;
 
+// string transaksi[];
+
 /* Function struktur data double linked list */
 void addNode(string *data);
 
@@ -34,11 +37,16 @@ User *searchUser(string query);
 /* Function utama */
 bool loginKaryawan(string username, string password);
 bool loginAdmin(string username, string password);
-void menuAdmin(), menuKaryawan();
-void sortingBarang();
+void menuAdmin(), menuKaryawan(string username);
+void sortingBarang(Barang *head, string method);
 Barang *searchBarang(string query);
 void addBarang(string nama, string harga, string stok), showBarang(), updateBarang(), deleteBarang();
 void createSampleDataBarang();
+// int getSizeBarang();
+
+/* Function utama karyawan */
+void createTransaksi();
+void riwayatTransaksi();
 
 /* Function tambahan */
 void gotoxy(int x, int y);
@@ -53,6 +61,7 @@ int main()
     /* membuat 10 data barang dimasukan ke node double linked list */
     createSampleDataBarang();
 
+login:
     string username, password;
     do
     {
@@ -72,7 +81,7 @@ int main()
         }
         else if (loginKaryawan(username, password))
         {
-            menuKaryawan();
+            menuKaryawan(username);
         }
         else
         {
@@ -81,6 +90,7 @@ int main()
 
     } while (!loginAdmin(username, password) || !loginKaryawan(username, password));
 
+    goto login;
     return 0;
 }
 
@@ -111,6 +121,8 @@ void addNode(string *data)
     }
 }
 
+/* Function untuk auth, untuk proses login admin dan karyawan */
+
 bool loginAdmin(string username, string password)
 {
     User *admin = userHeadInData;
@@ -135,12 +147,17 @@ bool loginKaryawan(string username, string password)
     return false;
 }
 
+/* Function untuk tampilan menu */
 void menuAdmin()
 {
+    bool condition = true;
     int pilihan;
     string data[3];
+
     do
     {
+    system("cls");
+
         cout << ">>> SELAMAT DATANG ADMIN <<<" << endl;
         cout << "----------------------------" << endl;
         cout << "1. Menambahkan barang baru" << endl;
@@ -178,32 +195,128 @@ void menuAdmin()
             deleteBarang();
             break;
         case 5:
+            condition = false;
             userManager();
             break;
         case 6:
+            condition = false;
             cout << "Bye!." << endl;
             break;
         default:
             cout << "Menu tidak tersedia!" << endl;
         }
-    } while (pilihan != 6 || pilihan == 5);
+    } while (condition);
 }
 
-void menuKaryawan()
+void menuKaryawan(string username)
 {
-    cout << "Kamu karyawan" << endl;
-}
+    int pilihan;
 
-void sortingBarang()
-{
-    /* masih belum dibagian sorting
-       rencana bisa sorting sesuai abjad a-z ~ z-a ~ stok paling sedikit ~ stok paling banyak
-    */
-    Barang *barangBeforeSorted = head;
-    while (barangBeforeSorted != NULL)
+    do
     {
-        // code
+    system("cls");
+    
+        cout << "Selamat datang " << username << endl;
+        cout << "--------------------------" << endl;
+        cout << "Menu:" << endl;
+        cout << "1. Buat transaksi" << endl;
+        cout << "2. Lihat riwayat transaksi" << endl;
+        cout << "3. Logout" << endl;
+        cout << "--------------------------" << endl;
+        cout << "Masukan pilihan : ";
+        cin >> pilihan;
+
+        switch (pilihan)
+        {
+        case 1:
+            createTransaksi();
+            break;
+        case 2:
+            riwayatTransaksi();
+            break;
+        case 3:
+            cout << "Bye." << endl;
+            break;
+        default:
+            cout << "Menu tidak tersedia." << endl;
+        }
+    } while (pilihan != 3);
+}
+
+/* Function sorting dan searching barang */
+
+void swapData(Barang *node1, Barang *node2)
+{
+    string temp[3];
+    temp[0] = node1->data[0];
+    temp[1] = node1->data[1];
+    temp[2] = node1->data[2];
+
+    node1->data[0] = node2->data[0];
+    node1->data[1] = node2->data[1];
+    node1->data[2] = node2->data[2];
+
+    node2->data[0] = temp[0];
+    node2->data[1] = temp[1];
+    node2->data[2] = temp[2];
+}
+/* Sorting pake bubble sort */
+void sortingBarang(Barang *head, string method)
+{
+    if (head == NULL || head->next == NULL)
+    {
+        return;
     }
+
+    bool swapped;
+    Barang *current;
+    Barang *last = NULL;
+
+    do
+    {
+        swapped = false;
+        current = head;
+
+        while (current->next != last)
+        {
+            if (method == "ascending")
+            {
+                if (current->data[0] > current->next->data[0])
+                {
+                    swapData(current, current->next);
+                    swapped = true;
+                }
+            }
+            else if (method == "descending")
+            {
+                if (current->data[0] < current->next->data[0])
+                {
+                    swapData(current, current->next);
+                    swapped = true;
+                }
+            }
+            else if (method == "stok-kecil")
+            {
+                if (stoi(current->data[2]) > stoi(current->next->data[2]))
+                {
+                    swapData(current, current->next);
+                    swapped = true;
+                }
+            }
+            else if (method == "stok-besar")
+            {
+                if (stoi(current->data[2]) < stoi(current->next->data[2]))
+                {
+                    swapData(current, current->next);
+                    swapped = true;
+                }
+            }
+
+            current = current->next;
+        }
+
+        last = current;
+    } while (swapped);
 }
 
 /* Search disesuaikan biar bisa dipake berulang-ulang
@@ -225,36 +338,48 @@ Barang *searchBarang(string query)
     return NULL;
 }
 
+/* Function operasi CRUD pada barang (double linked list) */
 void addBarang(string nama, string harga, string stok)
 {
     string data[3] = {nama, harga, stok};
 
-    /* Cek barang duplicate. Jika iya, maka tambah quantity-nya saja */
+    /* Cek barang duplicate. Jika iya, maka ubah harga dan tambah quantity-nya saja */
     Barang *duplicate = searchBarang(nama);
     if (duplicate == NULL)
     {
         addNode(data);
+        cout << "Barang " << nama << " berhasil ditambahkan" << endl;
     }
     else
     {
-        int newStok = stoi(duplicate->data[2]) + stoi(data[2]);
+        duplicate->data[1] = data[1];                           // ubah harga
+        int newStok = stoi(duplicate->data[2]) + stoi(data[2]); // tambah stok
         duplicate->data[2] = to_string(newStok);
+
+        cout << "Barang " << nama << " duplikat, hanya diubah harga dan stok saja!" << endl;
     }
+    getch();
 }
 
 /* Membuat fungsi untuk membuat data barang default */
 void createSampleDataBarang()
 {
-    addBarang("Indomie Soto", "3000", "30");
-    addBarang("Minyak Goreng", "16000", "13");
-    addBarang("Beras 1kg", "15000", "5");
-    addBarang("Kecap Bango", "3000", "12");
-    addBarang("Tepung Terigu", "11000", "17");
-    addBarang("Telor 1kg", "29000", "15");
-    addBarang("Indomie Goreng", "3500", "40");
-    addBarang("Aqua Galon", "20000", "10");
-    addBarang("Gas 3kg", "20000", "15");
-    addBarang("Ladaku", "1000", "100");
+    string data[][3] = {
+        {"Indomie Soto", "3000", "30"},
+        {"Minyak Goreng", "16000", "13"},
+        {"Beras 1kg", "15000", "5"},
+        {"Kecap Bango", "3000", "12"},
+        {"Tepung Terigu", "11000", "17"},
+        {"Telor 1kg", "29000", "15"},
+        {"Indomie Kari", "3500", "40"},
+        {"Aqua Galon", "20000", "10"},
+        {"Gas 5kg", "60000", "30"},
+        {"Gas 3kg", "20000", "15"},
+        {"Ladaku", "1000", "100"}};
+    for (int i = 0; i < (sizeof(data) / sizeof(data[0])); i++)
+    {
+        addBarang(data[i][0], data[i][1], data[i][2]);
+    }
 }
 
 void showBarang()
@@ -266,26 +391,34 @@ void showBarang()
     {
         cout << "Daftar Barang: " << endl
              << endl;
+
+        cout << "-------------------------------------------------" << endl;
+        cout << "| NAMA BARANG\t |\tHARGA\t |   JUMLAH \t|"<< endl;
+        cout << "-------------------------------------------------" << endl;
         while (print != NULL)
         {
             /* Kode show disesuaikan */
-            cout << print->data[0] << " " << print->data[1] << " " << print->data[2] << endl;
+            
+            cout <<  "| " << print->data[0] << "\t |\t" << print->data[1] << "\t |\t" << print->data[2] << "\t|"<< endl;
 
             print = print->next;
         }
-        cout << endl;
+        
+        cout << "-------------------------------------------------" << endl;
     }
     else
     {
         cout << "\nBarang masih kosong!" << endl
              << endl;
     }
+    getch();
 }
 void updateBarang()
 {
     if (head == NULL)
     {
         cout << "Tidak ada barang dalam daftar." << endl;
+        getch();
         return;
     }
 
@@ -317,6 +450,7 @@ void updateBarang()
         cout << "Data barang telah diperbarui." << endl
              << endl;
     }
+    getch();
     // showBarang(); <- buat testing
 }
 
@@ -325,6 +459,7 @@ void deleteBarang()
     if (head == NULL)
     {
         cout << "Tidak ada barang dalam daftar." << endl;
+        getch();
         return;
     }
     string nama;
@@ -362,10 +497,11 @@ void deleteBarang()
 
         cout << "Barang \"" << nama << "\" telah dihapus." << endl;
     }
-
+    getch();
     // showBarang(); <- buat testing
 }
 
+/* Function untuk mengelola user (single linked list) */
 void userManager()
 {
     int pilihan;
@@ -395,7 +531,7 @@ void userManager()
             cout << "Password : ";
             getline(cin, password);
 
-            addUser(name, password, &userHeadInData); // pointer next belum jadi
+            addUser(name, password, &userHeadInData);
             break;
         case 2:
             deleteUser();
@@ -414,7 +550,7 @@ void userManager()
             break;
         }
 
-    } while (pilihan != 4 || pilihan == 5);
+    } while (pilihan != 5);
 }
 
 User *searchUser(string query)
@@ -444,7 +580,7 @@ void addUser(string name, string password, User **head)
         cout << "User sudah terdaftar, gunakan nama lain." << endl;
         return;
     }
-
+    // operasi penghapusan
     if (*head == NULL)
     {
         *head = user;
@@ -458,11 +594,16 @@ void addUser(string name, string password, User **head)
         }
         current->next = user;
     }
+    cout << "User " << name << " berhasil ditambahkan!" << endl;
+    getch();
 }
 
 void deleteUser()
 {
     string query;
+
+    listUser();
+
     cout << "Masukan nama user yang akan di hapus : ";
     cin.ignore();
     getline(cin, query);
@@ -495,33 +636,93 @@ void deleteUser()
             }
             userBeforeDeletedUser->next = userToDelete->next;
             delete userToDelete;
+            
+            cout << "User " << query << " berhasil dihapus " << endl;
         }
+        getch();
     }
 }
 
 void ubahPasswordAdmin()
 {
-    string newPassword;
-    cin.ignore();
-    cout << "Masukan password baru : ";
-    getline(cin, newPassword);
-
     User *admin = userHeadInData;
-    admin->password = newPassword;
+    string newPassword, oldPassword;
+    cin.ignore();
+    cout << "Masukan password sekarang : ";
+    getline(cin, oldPassword);
+    if (admin->password == oldPassword)
+    {
+        cout << "Masukan password baru : ";
+        getline(cin, newPassword);
+
+        admin->password = newPassword;
+
+        cout << "Password admin berhasil diubah!" << endl;
+    }
+    else
+    {
+        cout << "Password salah!! Tidak bisa mengubah password baru!" << endl;
+    }
+    getch();
 }
 
 void listUser()
 {
     User *current = userHeadInData;
+    cout << "------------------------" << endl;
+    cout << "| NAMA USER | PASSWORD |" << endl;
+    cout << "------------------------" << endl;
     while (current != NULL)
     {
         // list user tampilan disesuaikan
-        cout << current->name << " " << current->password << endl;
+        cout << "| " << current->name << "\t | " << current->password << "\t | " << endl;
 
         current = current->next;
     }
+    cout << "------------------------" << endl;
+    getch();
 }
 
+/* Function untuk karyawan */
+void createTransaksi()
+{
+    string query;
+    char ulangi = 'n' || 'N';
+    string transaksi[][3] = {};
+    int i = 0;
+
+    do
+    {
+        showBarang();
+        cout << "Masukan nama barang : ";
+        getline(cin, query);
+        cin.ignore();
+        Barang *barang = searchBarang(query);
+        if(barang == NULL)
+        {
+            cout << "Barang tidak ditemukan!" << endl;
+        }
+        else
+        {
+            transaksi[i][0] = barang->data[0];
+            transaksi[i][1] = barang->data[1];
+            transaksi[i][2] = barang->data[2];
+            i++;
+        }
+
+        cout << "Tambah barang lagi? [y/n]: ";
+        cin >> ulangi;
+
+    } while(ulangi == 'Y' || ulangi == 'y');
+    
+
+}
+
+void riwayatTransaksi()
+{
+}
+
+/* Function untuk tampilan */
 void gotoxy(int x, int y)
 {
     COORD position;

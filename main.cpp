@@ -20,7 +20,7 @@ struct Barang
 /* Struct untuk menyimpan data riwayat transaksi */
 struct Transaksi
 {
-    string daftarBarang[100][3];
+    string daftarBarang[100][4];
     string username;
     int totalHarga;
     string created_at;
